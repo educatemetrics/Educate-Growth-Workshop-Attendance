@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educate! Growth Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g50:#EAF3DE;--g100:#C0DD97;--g200:#97C459;--g400:#639922;--g600:#3B6D11;--g800:#27500A;
+  --t50:#E1F5EE;--t100:#9FE1CB;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
+  --a50:#FAEEDA;--a100:#FAC775;--a400:#BA7517;--a600:#854F0B;--a800:#633806;
+  --r50:#FCEBEB;--r100:#F7C1C1;--r400:#E24B4A;--r600:#A32D2D;
+  --b50:#E6F1FB;--b100:#B5D4F4;--b400:#378ADD;--b600:#185FA5;--b800:#0C447C;
+  --gr50:#F1EFE8;--gr100:#D3D1C7;--gr400:#888780;--gr600:#5F5E5A;--gr800:#444441;--gr900:#2C2C2A;
+  --bg:#F7F6F2;--surface:#FFFFFF;--surf2:#F1EFE8;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.15);
+  --text:#2C2C2A;--text2:#5F5E5A;--text3:#888780;
+  --accent:#3B6D11;--r:8px;--rl:13px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--g800);display:flex;align-items:center;justify-content:center;z-index:999;}
+.login-box{background:var(--surface);border-radius:var(--rl);width:360px;max-width:calc(100vw - 32px);box-shadow:0 24px 64px rgba(0,0,0,.3);overflow:hidden;}
+.login-top{background:var(--g800);padding:28px 28px 22px;text-align:center;}
+.login-logo{font-size:17px;font-weight:700;color:#fff;margin-bottom:4px;}
+.login-logo em{color:var(--g100);font-style:normal;}
+.login-sub{font-size:12px;color:rgba(255,255,255,.5);}
+.login-body{padding:24px 28px 28px;}
+.login-err{background:var(--r50);border:1px solid var(--r100);color:var(--r600);border-radius:var(--r);padding:9px 12px;font-size:12px;margin-bottom:14px;display:none;}
+.login-body label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.login-body input{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .12s;margin-bottom:16px;}
+.login-body input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,109,17,.1);}
+.login-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.login-btn:hover{background:var(--g600);}
+
+/* TOPBAR */
+.topbar{background:var(--g800);height:54px;display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:50;}
+.logo{font-size:14px;font-weight:600;color:#fff;letter-spacing:-.2px;}
+.logo em{color:var(--g100);font-style:normal;}
+.venue-chip{margin-left:auto;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:#fff;display:none;align-items:center;gap:6px;}
+.venue-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--g200);}
+
+/* STEP NAV */
+.step-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:stretch;overflow-x:auto;}
+.step{display:flex;align-items:center;gap:8px;padding:13px 18px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;user-select:none;transition:all .15s;}
+.step:hover{color:var(--text);}
+.step.active{color:var(--accent);border-bottom-color:var(--accent);}
+.step.done{color:var(--text2);}
+.step .num{width:20px;height:20px;border-radius:50%;background:var(--surf2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--text3);}
+.step.active .num{background:var(--accent);color:#fff;}
+.step.done .num{background:var(--g100);color:var(--g800);}
+
+/* MAIN */
+.main{padding:20px;max-width:1060px;margin:0 auto;width:100%;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.ct{font-size:13px;font-weight:600;}
+.cb{padding:18px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text);transition:all .12s;}
+.btn:hover{background:var(--surf2);}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{background:var(--g600);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-xs{padding:3px 8px;font-size:11px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* FORM */
+label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .12s;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,109,17,.1);}
+input:disabled,select:disabled{background:var(--surf2);color:var(--text3);}
+.fg{margin-bottom:14px;}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.cols4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+
+/* STATS */
+.stat{background:var(--surf2);border-radius:var(--r);padding:13px 15px;}
+.stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px;}
+.stat-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+
+/* TABLE */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--surf2);}
+th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:#fafaf8;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.ba{background:var(--b50);color:var(--b800);}
+.bb{background:var(--t50);color:var(--t800);}
+.bc{background:var(--a50);color:var(--a800);}
+.bpresent{background:var(--g50);color:var(--g800);}
+.babsent{background:var(--r50);color:var(--r600);}
+
+/* AVATAR */
+.av{width:28px;height:28px;border-radius:50%;background:var(--t50);color:var(--t800);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ATT TOGGLE */
+.att-tog{display:inline-flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;}
+.att-btn{padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--surface);color:var(--text3);font-family:'DM Sans',sans-serif;transition:all .1s;}
+.att-btn.P.on{background:var(--g400);color:#fff;}
+.att-btn.A.on{background:var(--r400);color:#fff;}
+.att-btn:hover:not(.on){background:var(--surf2);color:var(--text);}
+
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:var(--r);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;}
+.alert-info{background:var(--b50);color:var(--b800);border:1px solid var(--b100);}
+.alert-success{background:var(--g50);color:var(--g800);border:1px solid var(--g100);}
+.alert-warn{background:var(--a50);color:var(--a800);border:1px solid var(--a100);}
+.alert-err{background:var(--r50);color:var(--r600);border:1px solid var(--r100);}
+
+/* SEG TABS */
+.seg{display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;width:fit-content;}
+.seg-btn{padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;border:none;border-right:1px solid var(--border2);background:var(--surface);color:var(--text3);font-family:'DM Sans',sans-serif;transition:all .12s;}
+.seg-btn:last-child{border-right:none;}
+.seg-btn.on{background:var(--accent);color:#fff;}
+.seg-btn:hover:not(.on){background:var(--surf2);color:var(--text);}
+
+/* LOADING */
+.loading{display:flex;align-items:center;gap:10px;color:var(--text3);font-size:13px;padding:32px 20px;}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--text3);}
+.empty .ico{font-size:28px;margin-bottom:8px;}
+.empty p{font-size:12px;}
+
+/* ATT HEADER BANNER */
+.att-header{background:var(--g800);color:#fff;border-radius:var(--rl) var(--rl) 0 0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.att-meta{display:flex;gap:18px;flex-wrap:wrap;}
+.att-meta-item{display:flex;flex-direction:column;gap:1px;}
+.att-meta-lbl{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.4px;}
+.att-meta-val{font-size:13px;font-weight:600;color:#fff;}
+
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s;}
+.ov.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:var(--rl);width:500px;max-width:calc(100vw - 32px);box-shadow:0 20px 60px rgba(0,0,0,.14);max-height:90vh;overflow-y:auto;}
+.mh{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mb{padding:18px;}
+.mf{padding:13px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+.hidden{display:none!important;}
+@media(max-width:620px){
+  .cols2,.cols3{grid-template-columns:1fr;}
+  .main{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-top">
+      <div class="login-logo">Educate! <em>Growth Workshop</em></div>
+      <div class="login-sub">Attendance Tracker · Enter your password to continue</div>
+    </div>
+    <div class="login-body">
+      <div class="login-err" id="login-err">Incorrect password. Please try again.</div>
+      <label>Password</label>
+      <input type="password" id="login-pw" placeholder="••••••••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="logo">Educate! <em>Growth Workshop</em></div>
+  <div class="venue-chip" id="venue-chip"><span class="dot"></span><span id="chip-venue">—</span></div>
+</div>
+
+<!-- ══ STEP NAV ══ -->
+<div class="step-nav">
+  <div class="step active" id="sn-1" onclick="goStep(1)"><span class="num">1</span> Select Venue</div>
+  <div class="step" id="sn-2" onclick="goStep(2)"><span class="num">2</span> Assign Classes</div>
+  <div class="step" id="sn-3" onclick="goStep(3)"><span class="num">3</span> Take Attendance</div>
+  <div class="step" id="sn-4" onclick="goStep(4)"><span class="num">4</span> Records</div>
+</div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════════════
+     STEP 1 — SELECT VENUE
+══════════════════════════════════════════ -->
+<div id="step-1">
+  <div style="margin-bottom:20px;">
+    <div style="font-size:17px;font-weight:600;margin-bottom:3px;">Select Venue</div>
+    <div style="font-size:12px;color:var(--text3);">Youth are loaded live from Google Sheets · MasterList tab</div>
+  </div>
+  <div class="card" style="max-width:460px;">
+    <div class="cb">
+      <div class="fg">
+        <label>Select Venue</label>
+        <select id="venue-select" onchange="onVenueChange()">
+          <option value="">— loading venues… —</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btn-load-youth" disabled onclick="loadYouthForVenue()">Load Youth →</button>
+      <div id="step1-msg" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 2 — ASSIGN CLASSES
+══════════════════════════════════════════ -->
+<div id="step-2" class="hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:2px;">Assign Classes</div>
+      <div style="font-size:12px;color:var(--text3);">Unassigned youth shown first · assignments saved back to Sheets</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div class="seg" id="seg-filter">
+        <button class="seg-btn on" onclick="filterAssign('all',this)">All</button>
+        <button class="seg-btn" onclick="filterAssign('unassigned',this)">Unassigned</button>
+        <button class="seg-btn" onclick="filterAssign('A',this)">Class A</button>
+        <button class="seg-btn" onclick="filterAssign('B',this)">Class B</button>
+        <button class="seg-btn" onclick="filterAssign('C',this)">Class C</button>
+      </div>
+      <button class="btn btn-sm" onclick="openModal('bulk-modal')">Bulk Assign…</button>
+      <button class="btn btn-primary btn-sm" id="btn-save-assign" onclick="saveAssignments()">💾 Save Assignments</button>
+      <button class="btn btn-primary btn-sm" onclick="goStep(3)">Take Attendance →</button>
+    </div>
+  </div>
+
+  <div class="cols4" id="s2-stats" style="margin-bottom:16px;"></div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ct" id="s2-title">Youth Roster</div>
+      <input type="text" id="s2-search" placeholder="Search name or ID…" style="width:180px;" oninput="renderAssignTable()">
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Youth</th><th>Youth ID</th><th>Gender</th><th>District</th><th>Parish</th><th>Class</th><th>Status</th>
+        </tr></thead>
+        <tbody id="assign-tbody"></tbody>
+      </table>
+    </div>
+    <div id="assign-loading" class="loading hidden"><div class="spinner"></div>Loading youth from Sheets…</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 3 — TAKE ATTENDANCE
+══════════════════════════════════════════ -->
+<div id="step-3" class="hidden">
+  <div style="font-size:17px;font-weight:600;margin-bottom:4px;">Take Attendance</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">Each save appends to the <strong>attendance</strong> tab in Google Sheets</div>
+
+  <div class="card" style="margin-bottom:18px;">
+    <div class="cb">
+      <div class="cols3">
+        <div class="fg">
+          <label>Class</label>
+          <select id="att-class" onchange="onAttClassChange()">
+            <option value="">— select class —</option>
+            <option>A</option><option>B</option><option>C</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Date</label>
+          <input type="date" id="att-date" onchange="onAttDateChange()">
+        </div>
+        <div class="fg">
+          <label>Lesson</label>
+          <select id="att-lesson" onchange="renderAttRoster()">
+            <option value="">— select date first —</option>
+          </select>
+        </div>
+      </div>
+      <div id="att-warn" class="hidden"></div>
+    </div>
+  </div>
+
+  <div id="att-roster-section" class="hidden">
+    <div class="att-header">
+      <div class="att-meta">
+        <div class="att-meta-item"><div class="att-meta-lbl">Venue</div><div class="att-meta-val" id="ah-venue">—</div></div>
+        <div class="att-meta-item"><div class="att-meta-lbl">Class</div><div class="att-meta-val" id="ah-class">—</div></div>
+        <div class="att-meta-item"><div class="att-meta-lbl">Date</div><div class="att-meta-val" id="ah-date">—</div></div>
+        <div class="att-meta-item"><div class="att-meta-lbl">Lesson</div><div class="att-meta-val" id="ah-lesson">—</div></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.2);color:#fff;" onclick="markAll('Present')">✓ All Present</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.2);color:#fff;" onclick="markAll('Absent')">✗ All Absent</button>
+      </div>
+    </div>
+    <div class="card" style="border-radius:0 0 var(--rl) var(--rl);border-top:none;">
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Youth</th><th>Youth ID</th><th>Gender</th><th>Attendance</th><th>Comments</th>
+          </tr></thead>
+          <tbody id="att-tbody"></tbody>
+        </table>
+      </div>
+      <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div id="att-summary"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="goStep(2)">← Back</button>
+          <button class="btn btn-primary" id="btn-save-att" onclick="saveAttendance()">💾 Save + Download CSV</button>
+        </div>
+      </div>
+      <div id="save-result" class="hidden" style="padding:0 18px 14px;"></div>
+    </div>
+  </div>
+
+  <div id="att-empty" class="empty">
+    <div class="ico">📋</div>
+    <p>Select class, date and lesson to load the roster</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 4 — RECORDS
+══════════════════════════════════════════ -->
+<div id="step-4" class="hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:2px;">Attendance Records</div>
+      <div style="font-size:12px;color:var(--text3);">Sessions saved this device session</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select id="rec-cls" style="width:120px;" onchange="renderRecords()">
+        <option value="">All Classes</option>
+        <option>A</option><option>B</option><option>C</option>
+      </select>
+      <button class="btn btn-sm" onclick="openModal('export-modal')">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="cols4" id="rec-stats" style="margin-bottom:16px;"></div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">Session Log</div></div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Venue</th><th>Class</th><th>Lesson</th><th>Present</th><th>Absent</th><th>Rate</th><th></th>
+        </tr></thead>
+        <tbody id="rec-tbody"></tbody>
+      </table>
+    </div>
+    <div id="rec-empty" class="empty hidden"><div class="ico">📭</div><p>No sessions recorded yet</p></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ BULK ASSIGN MODAL ══ -->
+<div class="ov" id="bulk-modal">
+  <div class="modal">
+    <div class="mh"><span style="font-weight:600;">Bulk Assign Class</span><button class="btn btn-sm" onclick="closeModal('bulk-modal')">✕</button></div>
+    <div class="mb">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Assign all <strong>unassigned</strong> youth to one class (won't overwrite existing assignments):</p>
+      <div class="fg"><label>Assign to Class</label>
+        <select id="bulk-class"><option value="">— choose —</option><option>A</option><option>B</option><option>C</option></select>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('bulk-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doBulkAssign()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSION DETAIL MODAL ══ -->
+<div class="ov" id="detail-modal">
+  <div class="modal" style="width:640px;">
+    <div class="mh"><span style="font-weight:600;" id="dm-title">Session Detail</span><button class="btn btn-sm" onclick="closeModal('detail-modal')">✕</button></div>
+    <div class="mb tw" id="dm-body"></div>
+  </div>
+</div>
+
+<!-- ══ EXPORT MODAL ══ -->
+<div class="ov" id="export-modal">
+  <div class="modal" style="width:400px;">
+    <div class="mh"><span style="font-weight:600;">Export Data</span><button class="btn btn-sm" onclick="closeModal('export-modal')">✕</button></div>
+    <div class="mb">
+      <div class="login-err" id="export-err" style="display:none;">Incorrect password.</div>
+      <div class="fg"><label>Admin Password</label>
+        <input type="password" id="export-pw" placeholder="••••••••••••••••" onkeydown="if(event.key==='Enter')doExport()">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="btn btn-sm" id="exp-btn-att" onclick="setExpType('attendance')" style="background:var(--accent);color:#fff;border-color:var(--accent);">Attendance</button>
+        <button class="btn btn-sm" id="exp-btn-asgn" onclick="setExpType('assignments')">Class Assignments</button>
+      </div>
+      <div id="exp-type-lbl" style="font-size:11px;color:var(--text3);">Will export all saved attendance records</div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('export-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doExport()">⬇ Download CSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// ░░  CONFIG — edit these two sections only  ░░
+// ══════════════════════════════════════════════════════════════
+
+// 1. Your deployed Google Apps Script Web App URL
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwUSn6a-J0TqA9F5h1ZuTnSRP7uF8OITw4JA9Mfk_DAFsxmgJ3pl0bqLdsUE77hw9VGZg/exec';
+
+// 2. Lesson schedule — {date: 'YYYY-MM-DD', name: 'Lesson Name'}
+//    Add or remove rows to match your programme calendar.
+const LESSON_SCHEDULE = [
+  { date: '2026-06-16', name: 'Introduction to Entrepreneurship' },
+  { date: '2026-06-17', name: 'Market Research Basics' },
+  { date: '2026-06-18', name: 'Financial Literacy 1' },
+  { date: '2026-06-19', name: 'Business Planning Week 1' },
+  { date: '2026-06-22', name: 'Record Keeping' },
+  { date: '2026-06-23', name: 'Savings & Credit' },
+  { date: '2026-06-24', name: 'Business Idea Pitch' },
+  { date: '2026-06-25', name: 'Customer Discovery' },
+  { date: '2026-06-26', name: 'Pricing & Costing' },
+  { date: '2026-06-27', name: 'Graduation Prep' },
+];
+
+const TRAINER_PW = 'see_change_2026';
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STATE  ░░
+// ══════════════════════════════════════════════════════════════
+const S = {
+  venue: '',
+  youth: [],        // loaded live from GAS
+  sessions: JSON.parse(sessionStorage.getItem('sc_sessions') || '[]'),
+  attState: {},     // youth_id -> {status, notes}
+  assignFilter: 'all',
+  dirty: false,     // unsaved assignment changes
+};
+
+function persistSessions() {
+  sessionStorage.setItem('sc_sessions', JSON.stringify(S.sessions));
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  AUTH  ░░
+// ══════════════════════════════════════════════════════════════
+function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  if (pw === TRAINER_PW) {
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('sc_auth', '1');
+    initApp();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
+  }
+}
+
+if (sessionStorage.getItem('sc_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  initApp();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  INIT  ░░
+// ══════════════════════════════════════════════════════════════
+async function initApp() {
+  await loadVenues();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STEP NAV  ░░
+// ══════════════════════════════════════════════════════════════
+function goStep(n) {
+  if (n > 1 && !S.venue) return;
+  if (n > 2 && !S.youth.length) return;
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step-'+i).classList.toggle('hidden', i !== n);
+    const el = document.getElementById('sn-'+i);
+    el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
+  });
+  if (n === 2) { renderS2Stats(); renderAssignTable(); }
+  if (n === 3) { setupAttDate(); renderAttRoster(); }
+  if (n === 4) { renderRecStats(); renderRecords(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STEP 1 — VENUE  ░░
+// ══════════════════════════════════════════════════════════════
+async function loadVenues() {
+  const msg = document.getElementById('step1-msg');
+  try {
+    const res = await fetch(`${GAS_URL}?action=getVenues`);
+    const data = await res.json();
+    const venues = data.venues || data;
+    const sel = document.getElementById('venue-select');
+    sel.innerHTML = '<option value="">— select venue —</option>' +
+      venues.map(v => `<option value="${v}">${v}</option>`).join('');
+    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ Loaded ${venues.length} venues from Google Sheets</div>`;
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-err" style="margin:0;">✗ Could not reach Google Sheets. Check GAS_URL in config.</div>`;
+  }
+}
+
+function onVenueChange() {
+  document.getElementById('btn-load-youth').disabled = !document.getElementById('venue-select').value;
+}
+
+async function loadYouthForVenue() {
+  const venue = document.getElementById('venue-select').value;
+  if (!venue) return;
+  const msg = document.getElementById('step1-msg');
+  msg.innerHTML = '<div class="loading" style="padding:12px 0;"><div class="spinner"></div>Loading youth from MasterList…</div>';
+
+  try {
+    const res = await fetch(`${GAS_URL}?action=getYouth&venue=${encodeURIComponent(venue)}`);
+    const youth = await res.json();
+    S.youth = youth;
+    S.venue = venue;
+    S.attState = {};
+    document.getElementById('chip-venue').textContent = venue;
+    const chip = document.getElementById('venue-chip');
+    chip.style.display = 'flex';
+    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ Loaded ${youth.length} youth for <strong>${venue}</strong></div>`;
+    setTimeout(() => goStep(2), 400);
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-err" style="margin:0;">✗ Failed to load youth. Check your GAS URL and sheet.</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STEP 2 — ASSIGN CLASSES  ░░
+// ══════════════════════════════════════════════════════════════
+function venueYouth() { return S.youth.filter(y => y.venue === S.venue); }
+
+function renderS2Stats() {
+  const vy = venueYouth();
+  const a=vy.filter(y=>y.class==='A').length, b=vy.filter(y=>y.class==='B').length,
+        c=vy.filter(y=>y.class==='C').length, u=vy.filter(y=>!y.class).length;
+  document.getElementById('s2-stats').innerHTML = `
+    <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${vy.length}</div><div class="stat-sub">at venue</div></div>
+    <div class="stat"><div class="stat-lbl">Class A</div><div class="stat-val" style="color:var(--b600)">${a}</div></div>
+    <div class="stat"><div class="stat-lbl">Class B</div><div class="stat-val" style="color:var(--t600)">${b}</div></div>
+    <div class="stat"><div class="stat-lbl">Class C</div><div class="stat-val" style="color:var(--a600)">${c}</div></div>
+    <div class="stat"><div class="stat-lbl">Unassigned</div><div class="stat-val" style="color:var(--r400)">${u}</div></div>`;
+}
+
+function filterAssign(f, el) {
+  S.assignFilter = f;
+  document.querySelectorAll('#seg-filter .seg-btn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  renderAssignTable();
+}
+
+function renderAssignTable() {
+  const search = (document.getElementById('s2-search').value || '').toLowerCase();
+  let youth = venueYouth().sort((a,b) => (!a.class && b.class) ? -1 : (a.class && !b.class) ? 1 : 0);
+  if (S.assignFilter === 'unassigned') youth = youth.filter(y => !y.class);
+  else if (['A','B','C'].includes(S.assignFilter)) youth = youth.filter(y => y.class === S.assignFilter);
+  if (search) youth = youth.filter(y => y.name.toLowerCase().includes(search) || y.youth_id.toLowerCase().includes(search));
+
+  const tbody = document.getElementById('assign-tbody');
+  if (!youth.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">No youth found</td></tr>`; return; }
+
+  tbody.innerHTML = youth.map(y => {
+    const ini = y.name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    const isNew = !y.class;
+    return `<tr ${isNew ? 'style="background:var(--g50);"' : ''}>
+      <td><div style="display:flex;align-items:center;gap:9px;">
+        <div class="av" style="${isNew ? 'background:var(--a50);color:var(--a800);' : ''}">${ini}</div>
+        <div>
+          <div style="font-weight:500;">${y.name}</div>
+          ${isNew ? '<div style="font-size:10px;color:var(--a600);font-weight:600;">UNASSIGNED</div>' : ''}
+        </div>
+      </div></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${y.youth_id}</td>
+      <td>${y.gender}</td>
+      <td style="font-size:12px;">${y.district || '—'}</td>
+      <td style="font-size:12px;color:var(--text3);">${y.parish || '—'}</td>
+      <td>
+        <select onchange="setClass('${y.youth_id}', this.value)" style="width:110px;font-size:12px;padding:5px 8px;">
+          <option value="" ${!y.class ? 'selected' : ''}>Unassigned</option>
+          <option value="A" ${y.class==='A' ? 'selected' : ''}>Class A</option>
+          <option value="B" ${y.class==='B' ? 'selected' : ''}>Class B</option>
+          <option value="C" ${y.class==='C' ? 'selected' : ''}>Class C</option>
+        </select>
+      </td>
+      <td>${y.class ? `<span class="badge b${y.class.toLowerCase()}">${y.class}</span>` : '<span style="font-size:11px;color:var(--text3);">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setClass(id, cls) {
+  const y = S.youth.find(x => x.youth_id === id);
+  if (y) { y.class = cls; S.dirty = true; renderS2Stats(); }
+}
+
+function doBulkAssign() {
+  const cls = document.getElementById('bulk-class').value;
+  if (!cls) { alert('Select a class first'); return; }
+  venueYouth().filter(y => !y.class).forEach(y => { y.class = cls; S.dirty = true; });
+  closeModal('bulk-modal');
+  renderS2Stats(); renderAssignTable();
+}
+
+async function saveAssignments() {
+  const btn = document.getElementById('btn-save-assign');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    // Use no-cors to avoid CORS preflight — GAS accepts this for cross-origin POSTs
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'saveAssignments',
+        venue: S.venue,
+        assignments: venueYouth().map(y => ({ youth_id: y.youth_id, class: y.class || '' }))
+      })
+    });
+    btn.textContent = '✓ Saved to Sheets';
+    S.dirty = false;
+    setTimeout(() => { btn.textContent = '💾 Save Assignments'; btn.disabled = false; }, 2500);
+  } catch(e) {
+    btn.textContent = '✗ Failed — retry';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STEP 3 — ATTENDANCE  ░░
+// ══════════════════════════════════════════════════════════════
+function setupAttDate() {
+  const d = document.getElementById('att-date');
+  if (!d.value) d.valueAsDate = new Date();
+  populateLessonDropdown();
+}
+
+function onAttDateChange() { populateLessonDropdown(); renderAttRoster(); }
+function onAttClassChange() { renderAttRoster(); }
+
+function populateLessonDropdown() {
+  const date = document.getElementById('att-date').value;
+  const sel = document.getElementById('att-lesson');
+  const forDate = LESSON_SCHEDULE.filter(l => l.date === date);
+  if (forDate.length) {
+    sel.innerHTML = forDate.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
+  } else {
+    sel.innerHTML = '<option value="">— no lesson scheduled for this date —</option>' +
+      LESSON_SCHEDULE.map(l => `<option value="${l.name}">${l.name} (${l.date})</option>`).join('');
+  }
+}
+
+function renderAttRoster() {
+  const cls = document.getElementById('att-class').value;
+  const date = document.getElementById('att-date').value;
+  const lesson = document.getElementById('att-lesson').value;
+  const section = document.getElementById('att-roster-section');
+  const empty = document.getElementById('att-empty');
+  const warn = document.getElementById('att-warn');
+
+  if (!cls || !date || !lesson) {
+    section.classList.add('hidden'); empty.classList.remove('hidden'); return;
+  }
+
+  const youth = venueYouth().filter(y => y.class === cls);
+  if (!youth.length) {
+    section.classList.add('hidden');
+    empty.innerHTML = `<div class="ico">👥</div><p>No youth assigned to Class ${cls} yet — go to Assign Classes first</p>`;
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  section.classList.remove('hidden');
+  warn.classList.add('hidden');
+
+  document.getElementById('ah-venue').textContent = S.venue;
+  document.getElementById('ah-class').textContent = 'Class ' + cls;
+  document.getElementById('ah-date').textContent = date;
+  document.getElementById('ah-lesson').textContent = lesson;
+
+  youth.forEach(y => { if (!S.attState[y.youth_id]) S.attState[y.youth_id] = { status: '', notes: '' }; });
+
+  const tbody = document.getElementById('att-tbody');
+  tbody.innerHTML = youth.map((y, i) => {
+    const s = S.attState[y.youth_id];
+    const ini = y.name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    return `<tr id="ar-${y.youth_id}">
+      <td style="color:var(--text3);font-size:12px;">${i+1}</td>
+      <td><div style="display:flex;align-items:center;gap:9px;"><div class="av">${ini}</div><span style="font-weight:500;">${y.name}</span></div></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${y.youth_id}</td>
+      <td>${y.gender}</td>
+      <td>
+        <div class="att-tog">
+          <button class="att-btn P ${s.status==='Present'?'on':''}" onclick="setAtt('${y.youth_id}','Present',this)">✓ Present</button>
+          <button class="att-btn A ${s.status==='Absent'?'on':''}" onclick="setAtt('${y.youth_id}','Absent',this)">✗ Absent</button>
+        </div>
+      </td>
+      <td><input type="text" value="${s.notes||''}" placeholder="Optional comment…" style="width:180px;font-size:12px;" oninput="S.attState['${y.youth_id}'].notes=this.value;updateAttSummary();"></td>
+    </tr>`;
+  }).join('');
+  updateAttSummary();
+}
+
+function setAtt(id, status, btn) {
+  S.attState[id] = S.attState[id] || {};
+  S.attState[id].status = status;
+  document.getElementById('ar-'+id).querySelectorAll('.att-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  updateAttSummary();
+}
+
+function markAll(status) {
+  const cls = document.getElementById('att-class').value;
+  venueYouth().filter(y => y.class === cls).forEach(y => {
+    S.attState[y.youth_id] = S.attState[y.youth_id] || {};
+    S.attState[y.youth_id].status = status;
+  });
+  renderAttRoster();
+}
+
+function updateAttSummary() {
+  const cls = document.getElementById('att-class').value;
+  const youth = venueYouth().filter(y => y.class === cls);
+  const p = youth.filter(y => S.attState[y.youth_id]?.status === 'Present').length;
+  const a = youth.filter(y => S.attState[y.youth_id]?.status === 'Absent').length;
+  const u = youth.length - p - a;
+  const rate = youth.length > 0 ? Math.round(p/youth.length*100) : 0;
+  const rc = rate>=80?'var(--g600)':rate>=60?'var(--a600)':'var(--r600)';
+  document.getElementById('att-summary').innerHTML =
+    `<span style="color:var(--g600);font-weight:600;">✓ ${p} present</span>&nbsp;&nbsp;` +
+    `<span style="color:var(--r600);font-weight:600;">✗ ${a} absent</span>&nbsp;&nbsp;` +
+    (u>0 ? `<span style="color:var(--a600);">⚠ ${u} unmarked</span>&nbsp;&nbsp;` : '') +
+    `<span style="color:var(--text3);">Rate: <strong style="color:${rc};">${rate}%</strong></span>`;
+}
+
+async function saveAttendance() {
+  const cls = document.getElementById('att-class').value;
+  const date = document.getElementById('att-date').value;
+  const lesson = document.getElementById('att-lesson').value;
+  if (!cls || !date || !lesson) { alert('Class, date and lesson are all required'); return; }
+
+  const youth = venueYouth().filter(y => y.class === cls);
+  const records = youth.map(y => ({
+    youth_id: y.youth_id,
+    name:     y.name,
+    gender:   y.gender,
+    venue:    S.venue,
+    class:    cls,
+    date:     date,
+    lesson:   lesson,
+    status:   S.attState[y.youth_id]?.status || 'Absent',
+    comments: S.attState[y.youth_id]?.notes  || '',
+  }));
+
+  // Update local session state (replace if same venue+class+date+lesson)
+  const session = { id: Date.now(), venue: S.venue, class: cls, date, lesson, records, savedAt: new Date().toISOString() };
+  S.sessions = S.sessions.filter(s => !(s.venue===S.venue && s.class===cls && s.date===date && s.lesson===lesson));
+  S.sessions.unshift(session);
+  persistSessions();
+
+  const btn = document.getElementById('btn-save-att');
+  const resultEl = document.getElementById('save-result');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  // ── AUTO CSV DOWNLOAD ──
+  const csvRows = [['youth_id','name','gender','venue','class','date','lesson_name','status','comments']];
+  records.forEach(r => csvRows.push([r.youth_id, r.name, r.gender, r.venue, r.class, r.date, r.lesson, r.status, r.comments]));
+  const safeName = lesson.replace(/[^a-zA-Z0-9]/g,'_').substring(0,25);
+  downloadCSV(csvRows, `attendance_${date}_Class${cls}_${safeName}.csv`);
+
+  // ── SEND TO GAS (no-cors avoids CORS preflight, works cross-origin) ──
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'appendAttendance', records })
+    });
+    resultEl.innerHTML = `<div class="alert alert-success">✓ Sent to Google Sheets &nbsp;·&nbsp; ✓ CSV downloaded &nbsp;·&nbsp; ${records.length} records saved</div>`;
+  } catch(e) {
+    resultEl.innerHTML = `<div class="alert alert-warn">⚠ Sheets unreachable — CSV downloaded as backup &nbsp;·&nbsp; ${records.length} records</div>`;
+  }
+
+  resultEl.classList.remove('hidden');
+  btn.disabled = false; btn.textContent = '💾 Save + Download CSV';
+  setTimeout(() => resultEl.classList.add('hidden'), 5000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  STEP 4 — RECORDS  ░░
+// ══════════════════════════════════════════════════════════════
+function renderRecStats() {
+  const sessions = S.sessions.filter(s => s.venue === S.venue);
+  const total = sessions.reduce((a,s)=>a+s.records.length,0);
+  const p = sessions.reduce((a,s)=>a+s.records.filter(r=>r.status==='Present').length,0);
+  const rate = total > 0 ? Math.round(p/total*100) : 0;
+  document.getElementById('rec-stats').innerHTML = `
+    <div class="stat"><div class="stat-lbl">Sessions</div><div class="stat-val">${sessions.length}</div></div>
+    <div class="stat"><div class="stat-lbl">Records</div><div class="stat-val">${total}</div></div>
+    <div class="stat"><div class="stat-lbl">Avg Rate</div><div class="stat-val" style="color:${rate>=80?'var(--g600)':rate>=60?'var(--a600)':'var(--r400)'}">${rate}%</div></div>`;
+}
+
+function renderRecords() {
+  const cf = document.getElementById('rec-cls').value;
+  let sessions = S.sessions.filter(s => s.venue === S.venue);
+  if (cf) sessions = sessions.filter(s => s.class === cf);
+  const tbody = document.getElementById('rec-tbody');
+  const empty = document.getElementById('rec-empty');
+  if (!sessions.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  tbody.innerHTML = sessions.map(s => {
+    const p = s.records.filter(r=>r.status==='Present').length;
+    const a = s.records.filter(r=>r.status==='Absent').length;
+    const rate = s.records.length > 0 ? Math.round(p/s.records.length*100) : 0;
+    const rc = rate>=80?'var(--g600)':rate>=60?'var(--a600)':'var(--r400)';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${s.date}</td>
+      <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.venue}</td>
+      <td><span class="badge b${s.class.toLowerCase()}">Class ${s.class}</span></td>
+      <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.lesson}</td>
+      <td><span class="badge bpresent">${p}</span></td>
+      <td><span class="badge babsent">${a}</span></td>
+      <td><strong style="color:${rc};">${rate}%</strong></td>
+      <td><button class="btn btn-xs" onclick="showDetail(${s.id})">View</button></td>
+    </tr>`;
+  }).join('');
+  renderRecStats();
+}
+
+function showDetail(id) {
+  const s = S.sessions.find(x => x.id == id);
+  if (!s) return;
+  document.getElementById('dm-title').textContent = `${s.lesson} · Class ${s.class} · ${s.date}`;
+  document.getElementById('dm-body').innerHTML = `<table>
+    <thead><tr><th>#</th><th>Name</th><th>Youth ID</th><th>Gender</th><th>Status</th><th>Comments</th></tr></thead>
+    <tbody>${s.records.map((r,i)=>`<tr>
+      <td style="color:var(--text3);font-size:11px;">${i+1}</td>
+      <td style="font-weight:500;">${r.name}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${r.youth_id}</td>
+      <td>${r.gender}</td>
+      <td><span class="badge ${r.status==='Present'?'bpresent':'babsent'}">${r.status}</span></td>
+      <td style="font-size:12px;color:var(--text3);">${r.comments||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+  openModal('detail-modal');
+}
+
+// ══════════════════════════════════════════════════════════════
+// ░░  EXPORT  ░░
+// ══════════════════════════════════════════════════════════════
+let expType = 'attendance';
+
+function setExpType(t) {
+  expType = t;
+  document.getElementById('exp-btn-att').style.cssText  = t==='attendance'  ? 'background:var(--accent);color:#fff;border-color:var(--accent);' : '';
+  document.getElementById('exp-btn-asgn').style.cssText = t==='assignments' ? 'background:var(--accent);color:#fff;border-color:var(--accent);' : '';
+  document.getElementById('exp-type-lbl').textContent = t==='attendance'
+    ? 'Will export all saved attendance records'
+    : 'Will export youth list with class assignments';
+}
+
+function doExport() {
+  const pw = document.getElementById('export-pw').value;
+  const err = document.getElementById('export-err');
+  if (pw !== TRAINER_PW) { err.style.display = 'block'; document.getElementById('export-pw').value = ''; return; }
+  err.style.display = 'none';
+  closeModal('export-modal');
+  document.getElementById('export-pw').value = '';
+  expType === 'attendance' ? exportAttCSV() : exportAssignCSV();
+}
+
+function exportAttCSV() {
+  const rows = [['youth_id','name','gender','venue','class','date','lesson_name','status','comments','saved_at']];
+  S.sessions.forEach(s => s.records.forEach(r =>
+    rows.push([r.youth_id, r.name, r.gender, r.venue, r.class, r.date, r.lesson, r.status, r.comments||'', s.savedAt||''])
+  ));
+  downloadCSV(rows, `attendance_export_${today()}.csv`);
+}
+
+function exportAssignCSV() {
+  const rows = [['youth_id','name','gender','district','parish','venue','class']];
+  S.youth.forEach(y => rows.push([y.youth_id, y.name, y.gender, y.district||'', y.parish||'', y.venue, y.class||'']));
+  downloadCSV(rows, `class_assignments_${today()}.csv`);
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = filename;
+  a.click();
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ══════════════════════════════════════════════════════════════
+// ░░  MODAL HELPERS  ░░
+// ══════════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.ov').forEach(el =>
+  el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); })
+);
+</script>
+</body>
+</html>
