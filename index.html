@@ -200,18 +200,44 @@ tr:hover td{background:#fafaf8;}
 <div id="step-1">
   <div style="margin-bottom:20px;">
     <div style="font-size:17px;font-weight:600;margin-bottom:3px;">Select Venue</div>
-    <div style="font-size:12px;color:var(--text3);">Youth are loaded live from Google Sheets · MasterList tab</div>
+    <div style="font-size:12px;color:var(--text3);">Youth loaded from Google Sheets · MasterList tab</div>
   </div>
-  <div class="card" style="max-width:460px;">
-    <div class="cb">
-      <div class="fg">
-        <label>Select Venue</label>
-        <select id="venue-select" onchange="onVenueChange()">
-          <option value="">— loading venues… —</option>
-        </select>
+
+  <!-- CACHED STATE (shown when cache exists) -->
+  <div id="cached-state" class="hidden" style="max-width:460px;">
+    <div class="card">
+      <div class="cb">
+        <div class="alert alert-success" style="margin-bottom:14px;">
+          <span>✓</span>
+          <div>
+            <strong id="cached-venue-name">—</strong> loaded
+            <div style="font-size:11px;margin-top:2px;opacity:.8;">Last synced: <span id="cached-time">—</span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="useCachedData()">Continue →</button>
+          <button class="btn" onclick="showFreshLoad()">⟳ Refresh from Sheets</button>
+        </div>
       </div>
-      <button class="btn btn-primary" id="btn-load-youth" disabled onclick="loadYouthForVenue()">Load Youth →</button>
-      <div id="step1-msg" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- FRESH LOAD (shown when no cache or user wants refresh) -->
+  <div id="fresh-load-state" class="hidden" style="max-width:460px;">
+    <div class="card">
+      <div class="cb">
+        <div class="fg">
+          <label>Select Venue</label>
+          <select id="venue-select" onchange="onVenueChange()">
+            <option value="">— loading venues… —</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-primary" id="btn-load-youth" disabled onclick="loadYouthForVenue()">Load Youth →</button>
+          <button class="btn btn-sm" id="btn-cancel-refresh" class="hidden" onclick="showCachedState()">Cancel</button>
+        </div>
+        <div id="step1-msg" style="margin-top:12px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -263,30 +289,39 @@ tr:hover td{background:#fafaf8;}
 ══════════════════════════════════════════ -->
 <div id="step-3" class="hidden">
   <div style="font-size:17px;font-weight:600;margin-bottom:4px;">Take Attendance</div>
-  <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">Each save appends to the <strong>attendance</strong> tab in Google Sheets</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">Select all three fields first, then load the roster</div>
 
   <div class="card" style="margin-bottom:18px;">
     <div class="cb">
       <div class="cols3">
         <div class="fg">
-          <label>Class</label>
-          <select id="att-class" onchange="onAttClassChange()">
+          <label>1 · Class</label>
+          <select id="att-class" onchange="onAttFieldChange()">
             <option value="">— select class —</option>
             <option>A</option><option>B</option><option>C</option>
           </select>
         </div>
         <div class="fg">
-          <label>Date</label>
+          <label>2 · Date</label>
           <input type="date" id="att-date" onchange="onAttDateChange()">
         </div>
         <div class="fg">
-          <label>Lesson</label>
-          <select id="att-lesson" onchange="renderAttRoster()">
+          <label>3 · Lesson</label>
+          <select id="att-lesson" onchange="onAttFieldChange()" disabled>
             <option value="">— select date first —</option>
           </select>
         </div>
       </div>
-      <div id="att-warn" class="hidden"></div>
+      <div id="att-field-hint" style="font-size:12px;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <span id="hint-class" style="padding:3px 8px;border-radius:4px;background:var(--surf2);">Class</span>
+        <span style="color:var(--gr100);">·</span>
+        <span id="hint-date" style="padding:3px 8px;border-radius:4px;background:var(--surf2);">Date</span>
+        <span style="color:var(--gr100);">·</span>
+        <span id="hint-lesson" style="padding:3px 8px;border-radius:4px;background:var(--surf2);">Lesson</span>
+        <span style="color:var(--text3);margin-left:4px;">— all required before loading roster</span>
+      </div>
+      <button class="btn btn-primary" id="btn-load-roster" disabled onclick="confirmLoadRoster()">Load Roster →</button>
+      <div id="att-warn" style="margin-top:12px;"></div>
     </div>
   </div>
 
@@ -307,7 +342,7 @@ tr:hover td{background:#fafaf8;}
       <div class="tw">
         <table>
           <thead><tr>
-            <th>#</th><th>Youth</th><th>Youth ID</th><th>Gender</th><th>Attendance</th><th>Comments</th>
+            <th>#</th><th>Youth</th><th>Youth ID</th><th>Gender</th><th>Attendance</th><th>Comments</th><th>Updated</th>
           </tr></thead>
           <tbody id="att-tbody"></tbody>
         </table>
@@ -418,21 +453,43 @@ tr:hover td{background:#fafaf8;}
 // ══════════════════════════════════════════════════════════════
 
 // 1. Your deployed Google Apps Script Web App URL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwUSn6a-J0TqA9F5h1ZuTnSRP7uF8OITw4JA9Mfk_DAFsxmgJ3pl0bqLdsUE77hw9VGZg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyYr8GlSO4I-KLzDeWmCIgjYWhnUeZfR1iyqVoER50RxfQ_LHAUywAhu0menrYe0fA4NA/exec';
 
 // 2. Lesson schedule — {date: 'YYYY-MM-DD', name: 'Lesson Name'}
-//    Add or remove rows to match your programme calendar.
+//    General Attendance is included for every day automatically.
 const LESSON_SCHEDULE = [
-  { date: '2026-06-16', name: 'Introduction to Entrepreneurship' },
-  { date: '2026-06-17', name: 'Market Research Basics' },
-  { date: '2026-06-18', name: 'Financial Literacy 1' },
-  { date: '2026-06-19', name: 'Business Planning Week 1' },
-  { date: '2026-06-22', name: 'Record Keeping' },
-  { date: '2026-06-23', name: 'Savings & Credit' },
-  { date: '2026-06-24', name: 'Business Idea Pitch' },
-  { date: '2026-06-25', name: 'Customer Discovery' },
-  { date: '2026-06-26', name: 'Pricing & Costing' },
-  { date: '2026-06-27', name: 'Graduation Prep' },
+  // 22 June
+  { date: '2026-06-22', name: 'General Attendance' },
+  { date: '2026-06-22', name: 'Karibu' },
+
+  // 23 June
+  { date: '2026-06-23', name: 'General Attendance' },
+  { date: '2026-06-23', name: 'My Business Grows As I Grow' },
+  { date: '2026-06-23', name: 'Who Am I and What Has Shaped Me?' },
+  { date: '2026-06-23', name: 'What\'s Holding Me Back?' },
+  { date: '2026-06-23', name: 'What Beliefs Shape My Future?' },
+  { date: '2026-06-23', name: 'What Future Do I Want for Me & My Business?' },
+  { date: '2026-06-23', name: 'What Is My Body Trying to Tell Me?' },
+
+  // 24 June
+  { date: '2026-06-24', name: 'General Attendance' },
+  { date: '2026-06-24', name: 'How Do I Manage Fear & Failure?' },
+  { date: '2026-06-24', name: 'How Do Social Expectations Shape My Choices?' },
+  { date: '2026-06-24', name: 'What Do I Want to Change to Grow?' },
+  { date: '2026-06-24', name: 'How Do I Respond When Things Go Wrong?' },
+  { date: '2026-06-24', name: 'How Do I Build Strong Supplier Relationships?' },
+  { date: '2026-06-24', name: 'How Can I Create Better Deals for My Business?' },
+
+  // 25 June
+  { date: '2026-06-25', name: 'General Attendance' },
+  { date: '2026-06-25', name: 'How Do I Manage My Business Every Day?' },
+  { date: '2026-06-25', name: 'How Do I Manage My Business Money & Loans?' },
+  { date: '2026-06-25', name: 'How Do I Keep Track of My Money & Credit?' },
+  { date: '2026-06-25', name: 'What Is My Plan of Action?' },
+
+  // 26 June
+  { date: '2026-06-26', name: 'General Attendance' },
+  { date: '2026-06-26', name: 'Departure' },
 ];
 
 const TRAINER_PW = 'see_change_2026';
@@ -442,11 +499,12 @@ const TRAINER_PW = 'see_change_2026';
 // ══════════════════════════════════════════════════════════════
 const S = {
   venue: '',
-  youth: [],        // loaded live from GAS
+  youth: [],
   sessions: JSON.parse(sessionStorage.getItem('sc_sessions') || '[]'),
-  attState: {},     // youth_id -> {status, notes}
+  attState: {},
   assignFilter: 'all',
-  dirty: false,     // unsaved assignment changes
+  dirty: false,
+  rosterLoaded: false,
 };
 
 function persistSessions() {
@@ -475,10 +533,59 @@ if (sessionStorage.getItem('sc_auth') === '1') {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ░░  CACHE HELPERS  ░░
+// ══════════════════════════════════════════════════════════════
+function saveCache(venue, youth) {
+  localStorage.setItem('sc_cache', JSON.stringify({
+    venue, youth, cachedAt: new Date().toISOString()
+  }));
+}
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem('sc_cache') || 'null'); } catch(e) { return null; }
+}
+function fmtCacheTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+}
+
+// ══════════════════════════════════════════════════════════════
 // ░░  INIT  ░░
 // ══════════════════════════════════════════════════════════════
 async function initApp() {
+  const cache = loadCache();
+  if (cache && cache.venue && cache.youth?.length) {
+    document.getElementById('cached-venue-name').textContent = `${cache.venue} (${cache.youth.length} youth)`;
+    document.getElementById('cached-time').textContent = fmtCacheTime(cache.cachedAt);
+    document.getElementById('cached-state').classList.remove('hidden');
+    document.getElementById('fresh-load-state').classList.add('hidden');
+  } else {
+    showFreshLoad();
+  }
+}
+
+function showCachedState() {
+  document.getElementById('cached-state').classList.remove('hidden');
+  document.getElementById('fresh-load-state').classList.add('hidden');
+}
+
+async function showFreshLoad() {
+  document.getElementById('cached-state').classList.add('hidden');
+  document.getElementById('fresh-load-state').classList.remove('hidden');
+  const hasCached = !!loadCache();
+  document.getElementById('btn-cancel-refresh').classList.toggle('hidden', !hasCached);
   await loadVenues();
+}
+
+function useCachedData() {
+  const cache = loadCache();
+  if (!cache) { showFreshLoad(); return; }
+  S.youth = cache.youth.map(y => ({ ...y, originalClass: y.class }));
+  S.venue = cache.venue;
+  S.attState = {};
+  document.getElementById('chip-venue').textContent = cache.venue;
+  document.getElementById('venue-chip').style.display = 'flex';
+  setTimeout(() => goStep(2), 100);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -493,7 +600,7 @@ function goStep(n) {
     el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
   });
   if (n === 2) { renderS2Stats(); renderAssignTable(); }
-  if (n === 3) { setupAttDate(); renderAttRoster(); }
+  if (n === 3) { S.rosterLoaded = false; setupAttDate(); renderAttRoster(); }
   if (n === 4) { renderRecStats(); renderRecords(); }
 }
 
@@ -509,7 +616,10 @@ async function loadVenues() {
     const sel = document.getElementById('venue-select');
     sel.innerHTML = '<option value="">— select venue —</option>' +
       venues.map(v => `<option value="${v}">${v}</option>`).join('');
-    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ Loaded ${venues.length} venues from Google Sheets</div>`;
+    // Pre-select last cached venue
+    const cache = loadCache();
+    if (cache?.venue) { sel.value = cache.venue; onVenueChange(); }
+    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ ${venues.length} venues loaded — select and click Load Youth</div>`;
   } catch(e) {
     msg.innerHTML = `<div class="alert alert-err" style="margin:0;">✗ Could not reach Google Sheets. Check GAS_URL in config.</div>`;
   }
@@ -531,10 +641,10 @@ async function loadYouthForVenue() {
     S.youth = youth;
     S.venue = venue;
     S.attState = {};
+    saveCache(venue, youth);
     document.getElementById('chip-venue').textContent = venue;
-    const chip = document.getElementById('venue-chip');
-    chip.style.display = 'flex';
-    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ Loaded ${youth.length} youth for <strong>${venue}</strong></div>`;
+    document.getElementById('venue-chip').style.display = 'flex';
+    msg.innerHTML = `<div class="alert alert-success" style="margin:0;">✓ Loaded ${youth.length} youth · cached for next visit</div>`;
     setTimeout(() => goStep(2), 400);
   } catch(e) {
     msg.innerHTML = `<div class="alert alert-err" style="margin:0;">✗ Failed to load youth. Check your GAS URL and sheet.</div>`;
@@ -565,6 +675,18 @@ function filterAssign(f, el) {
   renderAssignTable();
 }
 
+function classStatusBadge(y) {
+  if (!y.class) return '<span style="font-size:11px;color:var(--text3);">—</span>';
+  const transferred = y.originalClass && y.originalClass !== y.class && y.originalClass !== '';
+  if (transferred) {
+    return `<span class="badge" style="background:var(--a50);color:var(--a800);">
+      <span style="text-decoration:line-through;opacity:.6;">${y.originalClass}</span>
+      &nbsp;→&nbsp;${y.class}
+    </span>`;
+  }
+  return `<span class="badge b${y.class.toLowerCase()}">${y.class}</span>`;
+}
+
 function renderAssignTable() {
   const search = (document.getElementById('s2-search').value || '').toLowerCase();
   let youth = venueYouth().sort((a,b) => (!a.class && b.class) ? -1 : (a.class && !b.class) ? 1 : 0);
@@ -578,12 +700,14 @@ function renderAssignTable() {
   tbody.innerHTML = youth.map(y => {
     const ini = y.name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
     const isNew = !y.class;
-    return `<tr ${isNew ? 'style="background:var(--g50);"' : ''}>
+    const transferred = y.originalClass && y.originalClass !== y.class && y.originalClass !== '';
+    return `<tr data-yid="${y.youth_id}" ${isNew ? 'style="background:var(--g50);"' : transferred ? 'style="background:var(--a50);"' : ''}>
       <td><div style="display:flex;align-items:center;gap:9px;">
         <div class="av" style="${isNew ? 'background:var(--a50);color:var(--a800);' : ''}">${ini}</div>
         <div>
           <div style="font-weight:500;">${y.name}</div>
           ${isNew ? '<div style="font-size:10px;color:var(--a600);font-weight:600;">UNASSIGNED</div>' : ''}
+          ${transferred ? `<div style="font-size:10px;color:var(--a600);font-weight:600;">TRANSFERRED</div>` : ''}
         </div>
       </div></td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">${y.youth_id}</td>
@@ -598,14 +722,25 @@ function renderAssignTable() {
           <option value="C" ${y.class==='C' ? 'selected' : ''}>Class C</option>
         </select>
       </td>
-      <td>${y.class ? `<span class="badge b${y.class.toLowerCase()}">${y.class}</span>` : '<span style="font-size:11px;color:var(--text3);">—</span>'}</td>
+      <td class="assign-status">${classStatusBadge(y)}</td>
     </tr>`;
   }).join('');
 }
 
 function setClass(id, cls) {
   const y = S.youth.find(x => x.youth_id === id);
-  if (y) { y.class = cls; S.dirty = true; renderS2Stats(); }
+  if (y) {
+    if (!y.originalClass) y.originalClass = y.class || ''; // track original for transfer display
+    y.class = cls;
+    S.dirty = true;
+    renderS2Stats();
+    // update just this row's status column without full re-render
+    const row = document.querySelector(`tr[data-yid="${id}"]`);
+    if (row) {
+      const statusCell = row.querySelector('.assign-status');
+      if (statusCell) statusCell.innerHTML = classStatusBadge(y);
+    }
+  }
 }
 
 function doBulkAssign() {
@@ -620,7 +755,6 @@ async function saveAssignments() {
   const btn = document.getElementById('btn-save-assign');
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    // Use no-cors to avoid CORS preflight — GAS accepts this for cross-origin POSTs
     await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -630,8 +764,13 @@ async function saveAssignments() {
         assignments: venueYouth().map(y => ({ youth_id: y.youth_id, class: y.class || '' }))
       })
     });
+    // Update cache so assignments persist locally without needing a refresh
+    saveCache(S.venue, S.youth);
+    // Clear originalClass tracking now that save is confirmed
+    venueYouth().forEach(y => { y.originalClass = y.class; });
     btn.textContent = '✓ Saved to Sheets';
     S.dirty = false;
+    renderAssignTable();
     setTimeout(() => { btn.textContent = '💾 Save Assignments'; btn.disabled = false; }, 2500);
   } catch(e) {
     btn.textContent = '✗ Failed — retry';
@@ -645,22 +784,71 @@ async function saveAssignments() {
 function setupAttDate() {
   const d = document.getElementById('att-date');
   if (!d.value) d.valueAsDate = new Date();
-  populateLessonDropdown();
+  onAttDateChange();
 }
 
-function onAttDateChange() { populateLessonDropdown(); renderAttRoster(); }
-function onAttClassChange() { renderAttRoster(); }
+function onAttDateChange() {
+  populateLessonDropdown();
+  onAttFieldChange();
+}
+
+function onAttFieldChange() {
+  const cls    = document.getElementById('att-class').value;
+  const date   = document.getElementById('att-date').value;
+  const lesson = document.getElementById('att-lesson').value;
+
+  // Update hint pills
+  const hc = document.getElementById('hint-class');
+  const hd = document.getElementById('hint-date');
+  const hl = document.getElementById('hint-lesson');
+  hc.style.background = cls    ? 'var(--g50)'   : 'var(--surf2)';
+  hc.style.color      = cls    ? 'var(--g800)'  : '';
+  hc.textContent      = cls    ? `Class ${cls}` : 'Class';
+  hd.style.background = date   ? 'var(--g50)'   : 'var(--surf2)';
+  hd.style.color      = date   ? 'var(--g800)'  : '';
+  hd.textContent      = date   ? date            : 'Date';
+  hl.style.background = lesson ? 'var(--g50)'   : 'var(--surf2)';
+  hl.style.color      = lesson ? 'var(--g800)'  : '';
+  hl.textContent      = lesson ? lesson          : 'Lesson';
+
+  // Only enable Load Roster when all three are selected
+  const ready = cls && date && lesson;
+  document.getElementById('btn-load-roster').disabled = !ready;
+  document.getElementById('btn-load-roster').textContent = ready
+    ? `Load Roster — Class ${cls} · ${date} · ${lesson} →`
+    : 'Load Roster →';
+
+  // Hide roster if fields changed after loading
+  if (S.rosterLoaded) {
+    document.getElementById('att-roster-section').classList.add('hidden');
+    document.getElementById('att-empty').classList.remove('hidden');
+    document.getElementById('att-empty').innerHTML = '<div class="ico">🔄</div><p>Fields changed — click Load Roster to reload</p>';
+    S.rosterLoaded = false;
+  }
+}
 
 function populateLessonDropdown() {
   const date = document.getElementById('att-date').value;
-  const sel = document.getElementById('att-lesson');
+  const sel  = document.getElementById('att-lesson');
+  if (!date) { sel.disabled = true; sel.innerHTML = '<option value="">— select date first —</option>'; return; }
   const forDate = LESSON_SCHEDULE.filter(l => l.date === date);
   if (forDate.length) {
-    sel.innerHTML = forDate.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
+    sel.innerHTML = '<option value="">— select lesson —</option>' +
+      forDate.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
   } else {
-    sel.innerHTML = '<option value="">— no lesson scheduled for this date —</option>' +
+    sel.innerHTML = '<option value="">— no lesson scheduled · pick manually —</option>' +
       LESSON_SCHEDULE.map(l => `<option value="${l.name}">${l.name} (${l.date})</option>`).join('');
   }
+  sel.disabled = false;
+}
+
+function confirmLoadRoster() {
+  const cls    = document.getElementById('att-class').value;
+  const date   = document.getElementById('att-date').value;
+  const lesson = document.getElementById('att-lesson').value;
+  if (!cls || !date || !lesson) return;
+  S.rosterLoaded = true;
+  renderAttRoster();
 }
 
 function renderAttRoster() {
@@ -709,7 +897,8 @@ function renderAttRoster() {
           <button class="att-btn A ${s.status==='Absent'?'on':''}" onclick="setAtt('${y.youth_id}','Absent',this)">✗ Absent</button>
         </div>
       </td>
-      <td><input type="text" value="${s.notes||''}" placeholder="Optional comment…" style="width:180px;font-size:12px;" oninput="S.attState['${y.youth_id}'].notes=this.value;updateAttSummary();"></td>
+      <td><input type="text" value="${s.notes||''}" placeholder="Optional comment…" style="width:160px;font-size:12px;" oninput="S.attState['${y.youth_id}'].notes=this.value;updateAttSummary();"></td>
+      <td id="ts-${y.youth_id}" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap;">${s.updated_at||'—'}</td>
     </tr>`;
   }).join('');
   updateAttSummary();
@@ -718,8 +907,12 @@ function renderAttRoster() {
 function setAtt(id, status, btn) {
   S.attState[id] = S.attState[id] || {};
   S.attState[id].status = status;
+  S.attState[id].updated_at = new Date().toLocaleString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'});
   document.getElementById('ar-'+id).querySelectorAll('.att-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
+  // update timestamp cell in this row
+  const tsCell = document.getElementById('ts-'+id);
+  if (tsCell) tsCell.textContent = S.attState[id].updated_at;
   updateAttSummary();
 }
 
@@ -755,18 +948,19 @@ async function saveAttendance() {
 
   const youth = venueYouth().filter(y => y.class === cls);
   const records = youth.map(y => ({
-    youth_id: y.youth_id,
-    name:     y.name,
-    gender:   y.gender,
-    venue:    S.venue,
-    class:    cls,
-    date:     date,
-    lesson:   lesson,
-    status:   S.attState[y.youth_id]?.status || 'Absent',
-    comments: S.attState[y.youth_id]?.notes  || '',
+    youth_id:   y.youth_id,
+    name:       y.name,
+    gender:     y.gender,
+    venue:      S.venue,
+    class:      cls,
+    date:       date,
+    lesson:     lesson,
+    status:     S.attState[y.youth_id]?.status     || 'Absent',
+    comments:   S.attState[y.youth_id]?.notes      || '',
+    updated_at: S.attState[y.youth_id]?.updated_at || '',
   }));
 
-  // Update local session state (replace if same venue+class+date+lesson)
+  // Save to local session state
   const session = { id: Date.now(), venue: S.venue, class: cls, date, lesson, records, savedAt: new Date().toISOString() };
   S.sessions = S.sessions.filter(s => !(s.venue===S.venue && s.class===cls && s.date===date && s.lesson===lesson));
   S.sessions.unshift(session);
@@ -777,8 +971,8 @@ async function saveAttendance() {
   btn.disabled = true; btn.textContent = 'Saving…';
 
   // ── AUTO CSV DOWNLOAD ──
-  const csvRows = [['youth_id','name','gender','venue','class','date','lesson_name','status','comments']];
-  records.forEach(r => csvRows.push([r.youth_id, r.name, r.gender, r.venue, r.class, r.date, r.lesson, r.status, r.comments]));
+  const csvRows = [['youth_id','name','gender','venue','class','date','lesson_name','status','comments','updated_at']];
+  records.forEach(r => csvRows.push([r.youth_id, r.name, r.gender, r.venue, r.class, r.date, r.lesson, r.status, r.comments, r.updated_at]));
   const safeName = lesson.replace(/[^a-zA-Z0-9]/g,'_').substring(0,25);
   downloadCSV(csvRows, `attendance_${date}_Class${cls}_${safeName}.csv`);
 
