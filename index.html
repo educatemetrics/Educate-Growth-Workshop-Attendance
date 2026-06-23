@@ -256,10 +256,11 @@ tr:hover td{background:#fafaf8;}
       <div class="seg" id="seg-filter">
         <button class="seg-btn on" onclick="filterAssign('all',this)">All</button>
         <button class="seg-btn" onclick="filterAssign('unassigned',this)">Unassigned</button>
-        <button class="seg-btn" onclick="filterAssign('A',this)">Class A</button>
-        <button class="seg-btn" onclick="filterAssign('B',this)">Class B</button>
-        <button class="seg-btn" onclick="filterAssign('C',this)">Class C</button>
+        <button class="seg-btn" id="seg-A" onclick="filterAssign('A',this)">Class A</button>
+        <button class="seg-btn" id="seg-B" onclick="filterAssign('B',this)">Class B</button>
+        <button class="seg-btn" id="seg-C" onclick="filterAssign('C',this)">Class C</button>
       </div>
+      <button class="btn btn-sm" onclick="openRenameModal()">✏ Rename Classes</button>
       <button class="btn btn-sm" onclick="openModal('bulk-modal')">Bulk Assign…</button>
       <button class="btn btn-primary btn-sm" id="btn-save-assign" onclick="saveAssignments()">💾 Save Assignments</button>
       <button class="btn btn-primary btn-sm" onclick="goStep(3)">Take Attendance →</button>
@@ -299,7 +300,9 @@ tr:hover td{background:#fafaf8;}
           <label>1 · Class</label>
           <select id="att-class" onchange="onAttFieldChange()">
             <option value="">— select class —</option>
-            <option>A</option><option>B</option><option>C</option>
+            <option value="A" id="att-cls-A">Class A</option>
+            <option value="B" id="att-cls-B">Class B</option>
+            <option value="C" id="att-cls-C">Class C</option>
           </select>
         </div>
         <div class="fg">
@@ -454,6 +457,33 @@ tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+<!-- ══ RENAME CLASSES MODAL ══ -->
+<div class="ov" id="rename-modal">
+  <div class="modal" style="width:400px;">
+    <div class="mh"><span style="font-weight:600;">✏ Rename Classes</span><button class="btn btn-sm" onclick="closeModal('rename-modal')">✕</button></div>
+    <div class="mb">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Give your classes custom names. These are saved on this device and shared via the class label shown in Sheets.</p>
+      <div class="fg">
+        <label>Class A — Custom Name</label>
+        <input type="text" id="rename-A" placeholder="e.g. Sunflower, Group 1, Mama Biashara">
+      </div>
+      <div class="fg">
+        <label>Class B — Custom Name</label>
+        <input type="text" id="rename-B" placeholder="e.g. Maisha, Group 2">
+      </div>
+      <div class="fg">
+        <label>Class C — Custom Name</label>
+        <input type="text" id="rename-C" placeholder="e.g. Nguvu, Group 3">
+      </div>
+      <button class="btn btn-sm" onclick="resetClassNames()" style="color:var(--text3);font-size:11px;">Reset to defaults (A / B / C)</button>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('rename-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClassNames()">Save Names</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ DRAFT REMINDER MODAL ══ -->
 <div class="ov" id="reminder-modal">
   <div class="modal" style="width:440px;">
@@ -518,6 +548,74 @@ const LESSON_SCHEDULE = [
 ];
 
 const TRAINER_PW = 'see_change_2026';
+
+// ── Class name helpers ──────────────────────────────────────
+function classNamesKey() { return `sc_classnames_${S.venue || 'default'}`; }
+
+function loadClassNames() {
+  try { return JSON.parse(localStorage.getItem(classNamesKey()) || 'null') || {A:'A', B:'B', C:'C'}; }
+  catch(e) { return {A:'A', B:'B', C:'C'}; }
+}
+
+function cn(key) {
+  // Returns display name for class key A/B/C
+  return S.classNames?.[key] || key;
+}
+
+function applyClassNames() {
+  S.classNames = loadClassNames();
+  const n = S.classNames;
+  // Seg filter buttons
+  ['A','B','C'].forEach(k => {
+    const el = document.getElementById(`seg-${k}`);
+    if (el) el.textContent = n[k] === k ? `Class ${k}` : n[k];
+  });
+  // Step 3 class dropdown
+  ['A','B','C'].forEach(k => {
+    const el = document.getElementById(`att-cls-${k}`);
+    if (el) el.textContent = n[k] === k ? `Class ${k}` : `${n[k]} (${k})`;
+  });
+  // Records filter dropdown
+  const recCls = document.getElementById('rec-cls');
+  if (recCls) {
+    recCls.innerHTML = `<option value="">All Classes</option>` +
+      ['A','B','C'].map(k => `<option value="${k}">${n[k] === k ? 'Class ' + k : n[k] + ' (' + k + ')'}</option>`).join('');
+  }
+}
+
+function saveClassNames() {
+  const names = {
+    A: document.getElementById('rename-A').value.trim() || 'A',
+    B: document.getElementById('rename-B').value.trim() || 'B',
+    C: document.getElementById('rename-C').value.trim() || 'C',
+  };
+  localStorage.setItem(classNamesKey(), JSON.stringify(names));
+  S.classNames = names;
+  applyClassNames();
+  closeModal('rename-modal');
+  renderS2Stats();
+  renderAssignTable();
+}
+
+function resetClassNames() {
+  document.getElementById('rename-A').value = '';
+  document.getElementById('rename-B').value = '';
+  document.getElementById('rename-C').value = '';
+  localStorage.removeItem(classNamesKey());
+  S.classNames = {A:'A', B:'B', C:'C'};
+  applyClassNames();
+  closeModal('rename-modal');
+  renderS2Stats();
+  renderAssignTable();
+}
+
+function openRenameModal() {
+  const n = loadClassNames();
+  document.getElementById('rename-A').value = n.A !== 'A' ? n.A : '';
+  document.getElementById('rename-B').value = n.B !== 'B' ? n.B : '';
+  document.getElementById('rename-C').value = n.C !== 'C' ? n.C : '';
+  openModal('rename-modal');
+}
 
 // ══════════════════════════════════════════════════════════════
 // ░░  STATE  ░░
@@ -681,8 +779,8 @@ function goStep(n) {
     const el = document.getElementById('sn-'+i);
     el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
   });
-  if (n === 2) { renderS2Stats(); renderAssignTable(); }
-  if (n === 3) { S.rosterLoaded = false; setupAttDate(); renderAttRoster(); }
+  if (n === 2) { S.classNames = loadClassNames(); applyClassNames(); renderS2Stats(); renderAssignTable(); }
+  if (n === 3) { S.classNames = loadClassNames(); applyClassNames(); S.rosterLoaded = false; setupAttDate(); renderAttRoster(); }
   if (n === 4) { renderRecStats(); renderRecords(); }
 }
 
@@ -744,9 +842,9 @@ function renderS2Stats() {
         c=vy.filter(y=>y.class==='C').length, u=vy.filter(y=>!y.class).length;
   document.getElementById('s2-stats').innerHTML = `
     <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${vy.length}</div><div class="stat-sub">at venue</div></div>
-    <div class="stat"><div class="stat-lbl">Class A</div><div class="stat-val" style="color:var(--b600)">${a}</div></div>
-    <div class="stat"><div class="stat-lbl">Class B</div><div class="stat-val" style="color:var(--t600)">${b}</div></div>
-    <div class="stat"><div class="stat-lbl">Class C</div><div class="stat-val" style="color:var(--a600)">${c}</div></div>
+    <div class="stat"><div class="stat-lbl">${cn('A')}</div><div class="stat-val" style="color:var(--b600)">${a}</div></div>
+    <div class="stat"><div class="stat-lbl">${cn('B')}</div><div class="stat-val" style="color:var(--t600)">${b}</div></div>
+    <div class="stat"><div class="stat-lbl">${cn('C')}</div><div class="stat-val" style="color:var(--a600)">${c}</div></div>
     <div class="stat"><div class="stat-lbl">Unassigned</div><div class="stat-val" style="color:var(--r400)">${u}</div></div>`;
 }
 
@@ -760,13 +858,14 @@ function filterAssign(f, el) {
 function classStatusBadge(y) {
   if (!y.class) return '<span style="font-size:11px;color:var(--text3);">—</span>';
   const transferred = y.originalClass && y.originalClass !== y.class && y.originalClass !== '';
+  const label = cn(y.class);
+  const oldLabel = cn(y.originalClass);
   if (transferred) {
     return `<span class="badge" style="background:var(--a50);color:var(--a800);">
-      <span style="text-decoration:line-through;opacity:.6;">${y.originalClass}</span>
-      &nbsp;→&nbsp;${y.class}
+      <span style="text-decoration:line-through;opacity:.6;">${oldLabel}</span>&nbsp;→&nbsp;${label}
     </span>`;
   }
-  return `<span class="badge b${y.class.toLowerCase()}">${y.class}</span>`;
+  return `<span class="badge b${y.class.toLowerCase()}">${label}</span>`;
 }
 
 function renderAssignTable() {
@@ -797,11 +896,11 @@ function renderAssignTable() {
       <td style="font-size:12px;">${y.district || '—'}</td>
       <td style="font-size:12px;color:var(--text3);">${y.parish || '—'}</td>
       <td>
-        <select onchange="setClass('${y.youth_id}', this.value)" style="width:110px;font-size:12px;padding:5px 8px;">
+        <select onchange="setClass('${y.youth_id}', this.value)" style="width:130px;font-size:12px;padding:5px 8px;">
           <option value="" ${!y.class ? 'selected' : ''}>Unassigned</option>
-          <option value="A" ${y.class==='A' ? 'selected' : ''}>Class A</option>
-          <option value="B" ${y.class==='B' ? 'selected' : ''}>Class B</option>
-          <option value="C" ${y.class==='C' ? 'selected' : ''}>Class C</option>
+          <option value="A" ${y.class==='A' ? 'selected' : ''}>${cn('A') !== 'A' ? cn('A') + ' (A)' : 'Class A'}</option>
+          <option value="B" ${y.class==='B' ? 'selected' : ''}>${cn('B') !== 'B' ? cn('B') + ' (B)' : 'Class B'}</option>
+          <option value="C" ${y.class==='C' ? 'selected' : ''}>${cn('C') !== 'C' ? cn('C') + ' (C)' : 'Class C'}</option>
         </select>
       </td>
       <td class="assign-status">${classStatusBadge(y)}</td>
@@ -957,7 +1056,7 @@ function renderAttRoster() {
   section.classList.remove('hidden');
 
   document.getElementById('ah-venue').textContent  = S.venue;
-  document.getElementById('ah-class').textContent  = 'Class ' + cls;
+  document.getElementById('ah-class').textContent  = cn(cls) !== cls ? `${cn(cls)} (Class ${cls})` : 'Class ' + cls;
   document.getElementById('ah-date').textContent   = date;
   document.getElementById('ah-lesson').textContent = lesson;
 
