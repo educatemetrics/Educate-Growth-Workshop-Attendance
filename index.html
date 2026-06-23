@@ -553,12 +553,19 @@ const TRAINER_PW = 'see_change_2026';
 function classNamesKey() { return `sc_classnames_${S.venue || 'default'}`; }
 
 function loadClassNames() {
-  try { return JSON.parse(localStorage.getItem(classNamesKey()) || 'null') || {A:'A', B:'B', C:'C'}; }
+  try {
+    // Try venue-specific first, fall back to default
+    const venueKey = `sc_classnames_${S.venue || 'default'}`;
+    const defaultKey = 'sc_classnames_default';
+    const raw = localStorage.getItem(venueKey) || localStorage.getItem(defaultKey);
+    return JSON.parse(raw || 'null') || {A:'A', B:'B', C:'C'};
+  }
   catch(e) { return {A:'A', B:'B', C:'C'}; }
 }
 
 function cn(key) {
   // Returns display name for class key A/B/C
+  if (!S.classNames) S.classNames = loadClassNames();
   return S.classNames?.[key] || key;
 }
 
@@ -713,7 +720,9 @@ function fmtCacheTime(iso) {
 // ░░  INIT  ░░
 // ══════════════════════════════════════════════════════════════
 async function initApp() {
-  startReminderLoop();
+  // Load class names into state before anything renders
+  S.classNames = loadClassNames();
+
   const cache = loadCache();
   if (cache && cache.venue && cache.youth?.length) {
     document.getElementById('cached-venue-name').textContent = `${cache.venue} (${cache.youth.length} youth)`;
@@ -723,6 +732,9 @@ async function initApp() {
   } else {
     showFreshLoad();
   }
+
+  // Start reminder loop after state is initialised
+  startReminderLoop();
 }
 
 function showCachedState() {
