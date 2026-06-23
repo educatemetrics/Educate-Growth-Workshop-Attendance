@@ -210,8 +210,9 @@ tr:hover td{background:#fafaf8;}
         <div class="alert alert-success" style="margin-bottom:14px;">
           <span>✓</span>
           <div>
-            <strong id="cached-venue-name">—</strong> loaded
-            <div style="font-size:11px;margin-top:2px;opacity:.8;">Last synced: <span id="cached-time">—</span></div>
+            <strong id="cached-venue-name">—</strong>
+            <div style="font-size:11px;margin-top:2px;opacity:.8;">Youth list cached · Class assignments will sync live from Sheets</div>
+            <div style="font-size:11px;margin-top:1px;opacity:.7;">Last synced: <span id="cached-time">—</span></div>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -639,14 +640,33 @@ async function showFreshLoad() {
   await loadVenues();
 }
 
-function useCachedData() {
+async function useCachedData() {
   const cache = loadCache();
   if (!cache) { showFreshLoad(); return; }
-  S.youth = cache.youth.map(y => ({ ...y, originalClass: y.class }));
+
+  // Use cached youth list for speed, but re-fetch assignments live from Sheets
+  // so all trainers always see the latest class assignments
   S.venue = cache.venue;
   S.attState = {};
   document.getElementById('chip-venue').textContent = cache.venue;
   document.getElementById('venue-chip').style.display = 'flex';
+
+  // Show a quick syncing message
+  document.getElementById('cached-venue-name').textContent = `${cache.venue} — syncing assignments…`;
+
+  try {
+    const res = await fetch(`${GAS_URL}?action=getYouth&venue=${encodeURIComponent(cache.venue)}`);
+    const freshYouth = await res.json();
+    // Keep fresh assignments but fall back to cache if fetch fails
+    S.youth = freshYouth.map(y => ({ ...y, originalClass: y.class }));
+    saveCache(cache.venue, freshYouth); // update cache with latest assignments
+    document.getElementById('cached-venue-name').textContent = `${cache.venue} (${freshYouth.length} youth)`;
+  } catch(e) {
+    // Network failed — fall back to cache with a warning
+    S.youth = cache.youth.map(y => ({ ...y, originalClass: y.class }));
+    document.getElementById('cached-venue-name').textContent = `${cache.venue} — using cached data (offline)`;
+  }
+
   setTimeout(() => goStep(2), 100);
 }
 
